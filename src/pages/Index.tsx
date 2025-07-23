@@ -5,10 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
+import CaseRoulette from '@/components/CaseRoulette';
 
 const Index = () => {
   const [walletConnected, setWalletConnected] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [showRoulette, setShowRoulette] = useState(false);
+  const [inventory, setInventory] = useState<any[]>([]);
 
   const cases = [
     {
@@ -17,7 +21,12 @@ const Index = () => {
       price: 0.5,
       image: '🎁',
       rarity: 'Common',
-      items: ['NFT Avatar', 'Premium Stickers', 'Telegram Stars']
+      items: [
+        { id: 1, name: 'Basic Avatar', icon: '👤', rarity: 'common', value: 0.2 },
+        { id: 2, name: 'Sticker Pack', icon: '🎨', rarity: 'common', value: 0.3 },
+        { id: 3, name: 'Telegram Stars', icon: '⭐', rarity: 'rare', value: 0.8 },
+        { id: 4, name: 'Premium Badge', icon: '🏅', rarity: 'epic', value: 1.5 }
+      ]
     },
     {
       id: 2,
@@ -25,7 +34,12 @@ const Index = () => {
       price: 2.5,
       image: '💎',
       rarity: 'Rare',
-      items: ['Exclusive NFT', 'VIP Status', 'Crypto Rewards']
+      items: [
+        { id: 5, name: 'Rare NFT', icon: '🖼️', rarity: 'rare', value: 1.8 },
+        { id: 6, name: 'VIP Status', icon: '👑', rarity: 'epic', value: 3.2 },
+        { id: 7, name: 'Crypto Bonus', icon: '💰', rarity: 'epic', value: 4.1 },
+        { id: 8, name: 'Diamond Card', icon: '💎', rarity: 'legendary', value: 8.5 }
+      ]
     },
     {
       id: 3,
@@ -33,7 +47,12 @@ const Index = () => {
       price: 10.0,
       image: '🏆',
       rarity: 'Legendary',
-      items: ['Ultra Rare NFT', 'TON Coins', 'Special Access']
+      items: [
+        { id: 9, name: 'Epic NFT', icon: '🎭', rarity: 'epic', value: 8.2 },
+        { id: 10, name: 'TON Jackpot', icon: '💸', rarity: 'legendary', value: 25.0 },
+        { id: 11, name: 'Exclusive Access', icon: '🚀', rarity: 'legendary', value: 15.5 },
+        { id: 12, name: 'Golden Trophy', icon: '🏆', rarity: 'legendary', value: 30.0 }
+      ]
     }
   ];
 
@@ -46,6 +65,23 @@ const Index = () => {
   const connectWallet = () => {
     setWalletConnected(true);
     setBalance(12.5);
+  };
+
+  const openCase = (caseData: any) => {
+    if (!walletConnected || balance < caseData.price) return;
+    
+    setSelectedCase(caseData);
+    setShowRoulette(true);
+  };
+
+  const handleRouletteResult = (item: any) => {
+    setBalance(prev => prev - selectedCase.price + item.value);
+    setInventory(prev => [...prev, { ...item, timestamp: Date.now() }]);
+  };
+
+  const closeRoulette = () => {
+    setShowRoulette(false);
+    setSelectedCase(null);
   };
 
   return (
@@ -154,10 +190,10 @@ const Index = () => {
                   </Badge>
                   
                   <div className="space-y-2 mb-6">
-                    {caseItem.items.map((item, idx) => (
+                    {caseItem.items.slice(0, 3).map((item, idx) => (
                       <div key={idx} className="flex items-center text-sm text-muted-foreground">
                         <Icon name="CheckCircle" size={16} className="mr-2 text-success" />
-                        {item}
+                        {item.name}
                       </div>
                     ))}
                   </div>
@@ -166,8 +202,14 @@ const Index = () => {
                     {caseItem.price} TON
                   </div>
 
-                  <Button className="w-full crypto-gradient" disabled={!walletConnected}>
-                    {walletConnected ? 'Открыть кейс' : 'Подключи кошелёк'}
+                  <Button 
+                    className="w-full crypto-gradient" 
+                    disabled={!walletConnected || balance < caseItem.price}
+                    onClick={() => openCase(caseItem)}
+                  >
+                    {!walletConnected ? 'Подключи кошелёк' : 
+                     balance < caseItem.price ? 'Недостаточно средств' : 
+                     'Открыть кейс'}
                   </Button>
                 </div>
               </Card>
@@ -347,6 +389,15 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Roulette Modal */}
+      {showRoulette && selectedCase && (
+        <CaseRoulette
+          caseData={selectedCase}
+          onClose={closeRoulette}
+          onResult={handleRouletteResult}
+        />
+      )}
     </div>
   );
 };
